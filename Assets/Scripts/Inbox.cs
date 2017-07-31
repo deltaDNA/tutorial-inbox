@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using JSONObject = System.Collections.Generic.Dictionary<string, object>;
 
 namespace DDNAInboxTutorial
 {
@@ -126,13 +127,17 @@ namespace DDNAInboxTutorial
 
     public class Email
     {
-        #region properties               
+        #region properties     
+        public string id; 
         public string subject;
         public string message;
         public string sender;
         public string sent;
         public bool read;
         public string expiryTimestamp;
+        public string action;
+        public string value;
+        public int amount;
         #endregion
 
         // Basic Constructor
@@ -142,7 +147,7 @@ namespace DDNAInboxTutorial
         }
 
         // Constructor
-        public Email(string subject, string message, string sender, DateTime expiryTimestamp)
+        public Email(string subject, string message, string sender, DateTime expiryTimestamp, string action, string value, int amount)
         {
             // Instantiate new Email
             this.subject = subject;
@@ -150,8 +155,36 @@ namespace DDNAInboxTutorial
             this.sender = sender; 
             this.sent = DateTime.Now.ToString();
             this.read = false;
-            this.expiryTimestamp = expiryTimestamp.ToString();            
+            this.expiryTimestamp = expiryTimestamp.ToString();
+            this.action = action;
+            this.value = value;
+            this.amount = amount;
         }
+
+        public Email(JSONObject engageResponse)
+        {
+            object parameters;
+            engageResponse.TryGetValue("parameters", out parameters);
+
+            JSONObject p = parameters as JSONObject;
+
+            if (engageResponse.ContainsKey("transactionID"))        this.id = engageResponse["transactionID"].ToString();
+            if (engageResponse.ContainsKey("message"))              this.message = engageResponse["message"].ToString();
+            if (engageResponse.ContainsKey("heading"))              this.subject = engageResponse["heading"].ToString();
+
+            if (p.ContainsKey("mailAction"))                        this.action = p["mailAction"].ToString();
+            if (p.ContainsKey("mailActionValue"))                   this.value  = p["mailActionValue"].ToString();
+            if (p.ContainsKey("mailActionAmount"))                  this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
+
+            if (p.ContainsKey("mailActionExpiryDuration"))          this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
+            if (p.ContainsKey("mailActionExpiryTimestamp"))         this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();
+
+            this.read = false;
+            this.sender = "deltaDNA";
+            this.sent = System.DateTime.Now.ToString();
+        }
+
+
 
         public string ToJSON()
         {

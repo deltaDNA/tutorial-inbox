@@ -12,7 +12,7 @@ namespace DDNAInboxTutorial
 
 
         // UI Debug Console will be used to debug what SmartAds and Engage are doing
-        public int numConsoleLines = 10;        // the number of lines that the debug console will be truncated to
+        public int numConsoleLines = 12;        // the number of lines that the debug console will be truncated to
         private List<string> console = new List<string>();
 
 
