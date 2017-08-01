@@ -25,8 +25,7 @@ namespace DDNAInboxTutorial
                 Load();             
         }
         public int Count()
-        {
-            Debug.Log("Email List Contains :" + this.Emails.Count + " emails.");
+        {           
             return this.Emails.Count;
         }
         public int UnreadCount()
@@ -40,8 +39,7 @@ namespace DDNAInboxTutorial
         }
         public void Add(Email email)
         {
-            Emails.Add(email);
-            Debug.Log("Added Email to List :" + this.Emails.Count + " emails.");
+            Emails.Add(email);            
             Save();
             
         }
@@ -51,12 +49,7 @@ namespace DDNAInboxTutorial
             Debug.Log("Removed Email from List :" + this.Emails.Count + " emails.");
             Save();
         }
-        public void RemoveAt(int index)
-        {
-            Emails.RemoveAt(index);
-            Debug.Log("Removed Email from List :" + this.Emails.Count + " emails.");
-            Save();
-        }
+
         public void Clear()
         {
             this.Emails.Clear();
@@ -97,9 +90,7 @@ namespace DDNAInboxTutorial
             if (isLoading ) return;
 
             string emailData = this.ToJSON();
-            File.WriteAllText(filename, emailData);
-
-            Debug.Log("Saved Email List :" + this.Emails.Count + " emails.");
+            File.WriteAllText(filename, emailData);            
         }
 
         // Convert the Email List to a JSON string
@@ -128,7 +119,7 @@ namespace DDNAInboxTutorial
     public class Email
     {
         #region properties     
-        public string id; 
+        public string id;
         public string subject;
         public string message;
         public string sender;
@@ -152,7 +143,7 @@ namespace DDNAInboxTutorial
             // Instantiate new Email
             this.subject = subject;
             this.message = message;
-            this.sender = sender; 
+            this.sender = sender;
             this.sent = DateTime.Now.ToString();
             this.read = false;
             this.expiryTimestamp = expiryTimestamp.ToString();
@@ -168,16 +159,16 @@ namespace DDNAInboxTutorial
 
             JSONObject p = parameters as JSONObject;
 
-            if (engageResponse.ContainsKey("transactionID"))        this.id = engageResponse["transactionID"].ToString();
-            if (engageResponse.ContainsKey("message"))              this.message = engageResponse["message"].ToString();
-            if (engageResponse.ContainsKey("heading"))              this.subject = engageResponse["heading"].ToString();
+            if (engageResponse.ContainsKey("transactionID")) this.id = engageResponse["transactionID"].ToString();
+            if (engageResponse.ContainsKey("message")) this.message = engageResponse["message"].ToString();
+            if (engageResponse.ContainsKey("heading")) this.subject = engageResponse["heading"].ToString();
 
-            if (p.ContainsKey("mailAction"))                        this.action = p["mailAction"].ToString();
-            if (p.ContainsKey("mailActionValue"))                   this.value  = p["mailActionValue"].ToString();
-            if (p.ContainsKey("mailActionAmount"))                  this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
+            if (p.ContainsKey("mailAction")) this.action = p["mailAction"].ToString();
+            if (p.ContainsKey("mailActionValue")) this.value = p["mailActionValue"].ToString();
+            if (p.ContainsKey("mailActionAmount")) this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
 
-            if (p.ContainsKey("mailActionExpiryDuration"))          this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
-            if (p.ContainsKey("mailActionExpiryTimestamp"))         this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();
+            if (p.ContainsKey("mailActionExpiryDuration")) this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
+            if (p.ContainsKey("mailActionExpiryTimestamp")) this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();
 
             this.read = false;
             this.sender = "deltaDNA";
@@ -192,10 +183,12 @@ namespace DDNAInboxTutorial
         }
 
 
-        public void FromJSON(string email)
+        public Email FromJSON(string email)
         {
             Email t = new Email();
             t = JsonUtility.FromJson<Email>(email);
+
+            return t;
         }
     }
 }
