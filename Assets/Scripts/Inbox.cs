@@ -129,6 +129,7 @@ namespace DDNAInboxTutorial
         public string action;
         public string value;
         public int amount;
+        public string label;
         #endregion
 
         // Basic Constructor
@@ -138,7 +139,7 @@ namespace DDNAInboxTutorial
         }
 
         // Constructor
-        public Email(string subject, string message, string sender, DateTime expiryTimestamp, string action, string value, int amount)
+        public Email(string subject, string message, string sender, DateTime expiryTimestamp, string action, string value, int amount, string label)
         {
             // Instantiate new Email
             this.subject = subject;
@@ -150,6 +151,7 @@ namespace DDNAInboxTutorial
             this.action = action;
             this.value = value;
             this.amount = amount;
+            this.label = label;
         }
 
         public Email(JSONObject engageResponse)
@@ -166,6 +168,7 @@ namespace DDNAInboxTutorial
             if (p.ContainsKey("mailAction")) this.action = p["mailAction"].ToString();
             if (p.ContainsKey("mailActionValue")) this.value = p["mailActionValue"].ToString();
             if (p.ContainsKey("mailActionAmount")) this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
+            if (p.ContainsKey("mailActionLabel")) this.label = p["mailActionLabel"].ToString();
 
             if (p.ContainsKey("mailActionExpiryDuration")) this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
             if (p.ContainsKey("mailActionExpiryTimestamp")) this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();

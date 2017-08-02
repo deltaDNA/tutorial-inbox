@@ -12,13 +12,19 @@ namespace DDNAInboxTutorial
         private static EmailList myEmailList = null;
         public GameObject SimpleMailPanel;
         public GameObject SimpleMailItemPrefab;
+        public GameObject SimpleMail;
 
         public GameObject RichMailPanel;
+
+
+        public Rigidbody coin;              // Reference to the Coin prefab
+
 
         private void Awake()
         {
             SimpleMailPanelHide();
             SimpleMailPanelClear();
+            SimpleMail.GetComponent<SimpleMail>().HideMail();
         }
 
         // Use this for initialization
@@ -37,16 +43,16 @@ namespace DDNAInboxTutorial
             );
 
             myEmailList = new EmailList();
-            
+
         }
 
 
-        
+
 
         public void ResetUserID()
         {
             if (DDNA.Instance.isActiveAndEnabled && !DDNA.Instance.IsUploading)
-            {                 
+            {
                 DDNA.Instance.ClearPersistentData();
                 myEmailList.Clear();
                 SimpleMailPanelClear();
@@ -62,30 +68,31 @@ namespace DDNAInboxTutorial
         {
             SimpleMailPanelShow();
 
-             // Iterate until Engage returns empty response
-             Engagement simpleMailCheck = new Engagement("simpleMailCheck");
+            // Iterate until Engage returns empty response
+            Engagement simpleMailCheck = new Engagement("simpleMailCheck");
 
-                object message ;
-                DDNA.Instance.RequestEngagement(simpleMailCheck, (Dictionary<string, object> response) => {
-                    if (response.TryGetValue("message", out message))
-                        SimpleEmailReceived(response);
-                    else
-                        Debug.Log("No More Mail");
-                });   
-  
+            object message;
+            DDNA.Instance.RequestEngagement(simpleMailCheck, (Dictionary<string, object> response) =>
+            {
+                if (response.TryGetValue("message", out message))
+                    SimpleEmailReceived(response);
+                else
+                    Debug.Log("No More Mail");
+            });
+
         }
 
 
 
         private void SimpleEmailReceived(Dictionary<string, object> engageResponse)
-        {           
+        {
             Email newEmail = new Email(engageResponse);
 
             if (newEmail.id != null && newEmail.message != null)
             {
-                myEmailList.Add(newEmail);                
+                myEmailList.Add(newEmail);
             }
-            
+
             Debug.Log("Email Received : (" + myEmailList.Count() + ")");
             SimpleCheckMail();  // Look for another mail.            
         }
@@ -106,6 +113,15 @@ namespace DDNAInboxTutorial
             SimpleMailPanelPopulate();
             SimpleMailPanel.SetActive(true);
         }
+        public void SimpleMailPanelPopulate()
+        {
+            int counter = 0;
+            foreach (Email e in myEmailList.Emails)
+            {
+                AddSimpleMailDisaplyObject(e, counter);
+                counter++;
+            }
+        }
         public void AddSimpleMailDisaplyObject(Email newEmail, int counter)
         {
             GameObject newMailItem = (GameObject)Instantiate(SimpleMailItemPrefab, transform.position, transform.rotation);
@@ -122,21 +138,58 @@ namespace DDNAInboxTutorial
         {
             List<GameObject> mailPanels = new List<GameObject>();
             foreach (Transform child in SimpleMailPanel.transform)
-            {                
+            {
                 if (child.name.StartsWith("Simple Mail Item Panel"))
-                { 
+                {
                     Destroy(child.gameObject);
                 }
             }
         }
-       
-        public void SimpleMailPanelPopulate()
+
+
+
+        public void SimpleMailShow(Email email)
         {
-            int counter = 0; 
-            foreach(Email e in myEmailList.Emails)
+            SimpleMail.GetComponent<SimpleMail>().ShowMail(email);
+        }
+
+        public void SimpleMailAction(Email email)
+        {
+
+            if (email.action != null 
+                && email.value != null 
+                && System.Convert.ToDateTime(email.expiryTimestamp) > System.DateTime.UtcNow)
             {
-                AddSimpleMailDisaplyObject(e, counter);
-                counter++;
+                switch (email.action)
+                {
+                    case "GIFT":
+                        if (email.amount > 0)
+                        {
+                            Debug.Log(string.Format("Gifting Player {0} {1}", email.amount, email.value));
+                            DropCoins(email.amount);
+                        }
+                        break;
+                    case "DEEPLINK":
+                        if (email.value != null)
+                        {
+                            Debug.Log("Navigating to " + email.value);
+                            Application.OpenURL(email.value);
+                        }
+                        break;
+                }
+            }
+        }
+
+
+
+        void DropCoins(int numberOfCoins)
+        {
+            // Drop new coins into scene from above camera
+            for (int loop = 0; loop < numberOfCoins; loop++)
+            {
+                Vector3 coinStartingPosition = new Vector3(Random.Range(-8.0f,8.0f), Random.Range(6.0f, 25.0f), Random.Range(-5.0f, 5.0f));
+                Rigidbody coinClone = (Rigidbody)Instantiate(coin, coinStartingPosition, Random.rotation);
+
             }
         }
 

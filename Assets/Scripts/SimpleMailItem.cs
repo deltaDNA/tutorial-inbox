@@ -16,6 +16,7 @@ namespace DDNAInboxTutorial
 
         private EmailList parentEmailList;
         private Email email;
+      
 
         // Use this for initialization
         void Start() {
@@ -46,7 +47,13 @@ namespace DDNAInboxTutorial
         {           
             parentEmailList.Remove(email); 
             Destroy(gameObject);
-    }
+        }
+
+        public void ViewMail()
+        {
+            InboxTutorial it = GameObject.FindObjectOfType<InboxTutorial>();
+            it.SimpleMailShow(this.email);
+        }
 
     }
 }
