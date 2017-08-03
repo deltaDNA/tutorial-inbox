@@ -10,12 +10,14 @@ namespace DDNAInboxTutorial
     public class InboxTutorial : MonoBehaviour
     {
         private static EmailList myEmailList = null;
+
         public GameObject SimpleMailPanel;
         public GameObject SimpleMailItemPrefab;
         public GameObject SimpleMail;
 
         public GameObject RichMailPanel;
-
+        public GameObject RichMailItemPrefab;
+        public GameObject RichMail;
 
         public Rigidbody coin;              // Reference to the Coin prefab
 
@@ -25,6 +27,11 @@ namespace DDNAInboxTutorial
             SimpleMailPanelHide();
             SimpleMailPanelClear();
             SimpleMail.GetComponent<SimpleMail>().HideMail();
+
+            RichMailPanelHide();
+            RichMailPanelClear();   //Todo
+            RichMail.GetComponent<SimpleMail>().HideMail(); // Todo
+
         }
 
         // Use this for initialization
@@ -56,6 +63,7 @@ namespace DDNAInboxTutorial
                 DDNA.Instance.ClearPersistentData();
                 myEmailList.Clear();
                 SimpleMailPanelClear();
+                RichMailPanelClear();
                 this.Start();
             }
         }
@@ -72,7 +80,7 @@ namespace DDNAInboxTutorial
             Engagement simpleMailCheck = new Engagement("simpleMailCheck");
 
             object message;
-            DDNA.Instance.RequestEngagement(simpleMailCheck, (Dictionary<string, object> response) =>
+            DDNA.Instance.RequestEngagement(simpleMailCheck, (response) =>
             {
                 if (response.TryGetValue("message", out message))
                     SimpleEmailReceived(response);
@@ -82,21 +90,78 @@ namespace DDNAInboxTutorial
 
         }
 
+        public void RichCheckMail()
+        {
+            RichMailPanelShow();
+
+            // Iterate until Engage returns empty response
+            Engagement richMailCheck = new Engagement("richMailCheck");
 
 
-        private void SimpleEmailReceived(Dictionary<string, object> engageResponse)
+            DDNA.Instance.RequestEngagement(richMailCheck, (response) => {
+                ImageMessage imageMessage = ImageMessage.Create(response);
+                   
+                if (imageMessage != null)
+                {
+                    
+
+                    // This example will show the image as soon as the background
+                    // and button images have been downloaded.
+                    imageMessage.OnDidReceiveResources += () => {
+                        Debug.Log("Image Message loaded resources.");
+                        //imageMessage.Show();
+                    };
+
+                    // Add a handler for the 'dismiss' action.
+                    imageMessage.OnDismiss += (ImageMessage.EventArgs obj) => {
+                        Debug.Log("Image Message dismissed by " + obj.ID);
+                       
+                    };
+
+                    // Add a handler for the 'action' action.
+                    imageMessage.OnAction += (ImageMessage.EventArgs obj) => {
+                        Debug.Log("Image Message actioned by " + obj.ID + " with command " + obj.ActionValue);
+                        if (obj.ActionValue == "GIFT") DropCoins(100);
+                    };
+
+                    imageMessage.FetchResources();
+                    RichEmailReceived(response.JSON, imageMessage);
+                }
+                else
+                { 
+                    Debug.Log("No More Mail");
+                }
+            }, (exception) => {
+                Debug.Log("Engage reported an error: " + exception.Message);
+            });       
+        }
+
+
+
+        private void SimpleEmailReceived(JSONObject engageResponse)
         {
             Email newEmail = new Email(engageResponse);
 
-            if (newEmail.id != null && newEmail.message != null)
+            if (newEmail.id != null)
             {
                 myEmailList.Add(newEmail);
+                Debug.Log("Email Received : (" + myEmailList.Count() + ")");
             }
-
-            Debug.Log("Email Received : (" + myEmailList.Count() + ")");
-            SimpleCheckMail();  // Look for another mail.            
+            
+            // Look for another mail.   
+            SimpleCheckMail();
         }
+        private void RichEmailReceived(JSONObject engageResponse, ImageMessage imageMessage)
+        {
+            Email newEmail = new Email(engageResponse, imageMessage);
 
+            if (newEmail.id != null)
+            {
+                myEmailList.Add(newEmail);
+                Debug.Log("Email Received : (" + myEmailList.Count() + ")");
+            }
+            RichCheckMail();
+        }
 
 
 
@@ -118,8 +183,11 @@ namespace DDNAInboxTutorial
             int counter = 0;
             foreach (Email e in myEmailList.Emails)
             {
-                AddSimpleMailDisaplyObject(e, counter);
-                counter++;
+                if (e.emailType == "SIMPLE")
+                {
+                    AddSimpleMailDisaplyObject(e, counter);
+                    counter++;
+                }
             }
         }
         public void AddSimpleMailDisaplyObject(Email newEmail, int counter)
@@ -148,10 +216,77 @@ namespace DDNAInboxTutorial
 
 
 
+
+
+
+
+
         public void SimpleMailShow(Email email)
         {
             SimpleMail.GetComponent<SimpleMail>().ShowMail(email);
         }
+
+
+        // Simple Mail Display Panel 
+        // --------------------------
+
+        public void RichMailPanelHide()
+        {
+            RichMailPanel.SetActive(false);
+            RichMailPanelClear();
+        }
+        public void RichMailPanelShow()
+        {
+            RichMailPanelPopulate();
+            RichMailPanel.SetActive(true);
+        }
+        public void RichMailPanelPopulate()
+        {
+            int counter = 0;
+            foreach (Email e in myEmailList.Emails)
+            {
+                if (e.emailType == "RICH")
+                {
+                    AddRichMailDisaplyObject(e, counter);
+                    counter++;
+                }
+            }
+        }
+        public void AddRichMailDisaplyObject(Email newEmail, int counter)
+        {//Todo
+            GameObject newMailItem = (GameObject)Instantiate(RichMailItemPrefab, transform.position, transform.rotation);
+            newMailItem.transform.SetParent(RichMailPanel.transform);
+
+            newMailItem.transform.localPosition = new Vector3(-45.0f, -5.0f - (counter * 45.0f), 0);
+            newMailItem.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+
+            RichMailItem m = newMailItem.GetComponent<RichMailItem>();
+            m.SetMailDetails(newEmail, myEmailList);
+        }
+
+        public void RichMailPanelClear()
+        { //Todo
+            List<GameObject> mailPanels = new List<GameObject>();
+            foreach (Transform child in RichMailPanel.transform)
+            {
+                if (child.name.StartsWith("Rich Mail Item Panel"))
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+        }
+
+
+
+        public void RichMailShow(Email email)
+        {
+            SimpleMail.GetComponent<SimpleMail>().ShowMail(email);
+        }
+
+
+
+        
+
 
         public void SimpleMailAction(Email email)
         {

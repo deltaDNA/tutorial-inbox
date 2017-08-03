@@ -291,11 +291,11 @@ namespace DeltaDNA {
             private IEnumerator LoadResourceCoroutine(string url, Action<string> callback)
             {
                 #if UNITY_5_6_OR_NEWER
-                using (var www = UnityWebRequest.GetTexture(url))
+                using (var www = UnityWebRequestTexture.GetTexture(url))
                 {
                     yield return www.Send();
 
-                    if (www.isError) {
+                    if (www.isNetworkError) {
                         Logger.LogWarning("Failed to load resource "+url+" "+www.error);
                     } else {
                         this.texture = DownloadHandlerTexture.GetContent(www);

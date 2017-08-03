@@ -6,6 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using JSONObject = System.Collections.Generic.Dictionary<string, object>;
 
+
 namespace DDNAInboxTutorial
 {
     [System.Serializable]
@@ -130,6 +131,11 @@ namespace DDNAInboxTutorial
         public string value;
         public int amount;
         public string label;
+        public string url;
+        public JSONObject response;
+        public string emailType;
+        public DeltaDNA.ImageMessage imageMessage;
+
         #endregion
 
         // Basic Constructor
@@ -138,40 +144,52 @@ namespace DDNAInboxTutorial
 
         }
 
-        // Constructor
-        public Email(string subject, string message, string sender, DateTime expiryTimestamp, string action, string value, int amount, string label)
+        public Email(JSONObject engageResponse, DeltaDNA.ImageMessage imageMessage)
         {
-            // Instantiate new Email
-            this.subject = subject;
-            this.message = message;
-            this.sender = sender;
-            this.sent = DateTime.Now.ToString();
-            this.read = false;
-            this.expiryTimestamp = expiryTimestamp.ToString();
-            this.action = action;
-            this.value = value;
-            this.amount = amount;
-            this.label = label;
+            this.imageMessage = imageMessage;           
+            this.SetEmail(engageResponse);
         }
-
+        // Constructor
         public Email(JSONObject engageResponse)
         {
-            object parameters;
-            engageResponse.TryGetValue("parameters", out parameters);
-
-            JSONObject p = parameters as JSONObject;
+            this.SetEmail(engageResponse);
+        }
+        public void SetEmail(JSONObject engageResponse)
+        { 
+            this.response = engageResponse;
+            
 
             if (engageResponse.ContainsKey("transactionID")) this.id = engageResponse["transactionID"].ToString();
             if (engageResponse.ContainsKey("message")) this.message = engageResponse["message"].ToString();
             if (engageResponse.ContainsKey("heading")) this.subject = engageResponse["heading"].ToString();
 
-            if (p.ContainsKey("mailAction")) this.action = p["mailAction"].ToString();
-            if (p.ContainsKey("mailActionValue")) this.value = p["mailActionValue"].ToString();
-            if (p.ContainsKey("mailActionAmount")) this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
-            if (p.ContainsKey("mailActionLabel")) this.label = p["mailActionLabel"].ToString();
+            object parameters;
+            if (engageResponse.TryGetValue("parameters", out parameters))
+            {
 
-            if (p.ContainsKey("mailActionExpiryDuration")) this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
-            if (p.ContainsKey("mailActionExpiryTimestamp")) this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();
+                JSONObject p = parameters as JSONObject;
+
+                if (p.ContainsKey("mailAction")) this.action = p["mailAction"].ToString();
+                if (p.ContainsKey("mailActionValue")) this.value = p["mailActionValue"].ToString();
+                if (p.ContainsKey("mailActionAmount")) this.amount = System.Convert.ToInt32(p["mailActionAmount"]);
+                if (p.ContainsKey("mailActionLabel")) this.label = p["mailActionLabel"].ToString();
+
+                if (p.ContainsKey("mailActionExpiryDuration")) this.expiryTimestamp = System.DateTime.Now.AddHours(System.Convert.ToInt64(p["mailActionExpiryDuration"])).ToString();
+                if (p.ContainsKey("mailActionExpiryTimestamp")) this.expiryTimestamp = p["mailActionExpiryDuration"].ToString();
+            }
+
+
+            object image;
+            if (engageResponse.TryGetValue("image", out image))
+            {
+                JSONObject i = image as JSONObject;
+                if (i.ContainsKey("url")) this.url = i["url"].ToString();
+                this.emailType = "RICH";
+            }
+            else
+            {
+                this.emailType = "SIMPLE";
+            }
 
             this.read = false;
             this.sender = "deltaDNA";
